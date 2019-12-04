@@ -16,7 +16,7 @@ mkArray l =
    in arr
 
 patch :: P -> Int -> Int -> P
-patch program verb noun = program//[(1, verb), (2, noun)]
+patch program verb noun = program // [(1, verb), (2, noun)]
 
 executeAOp :: (Int -> Int -> Int) -> Int -> P -> P
 executeAOp op pos program =
@@ -55,7 +55,7 @@ answer2 p =
 solution :: IO ()
 solution = do
   contents <- readFile "input/input-day-2.txt"
-  l <- return ((map (\x -> read (x) :: Int) (splitOn "," (intercalate "," (lines contents)))))
+  l <- return ((map (\x -> read (x) :: Int) (splitOn "," contents)))
   program <- return (mkArray l)
   putStrLn $ "answer1 " ++ (show (answer1 program))
   putStrLn $ "answer2 " ++ (show (answer2 program))
