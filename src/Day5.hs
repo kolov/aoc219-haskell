@@ -1,6 +1,4 @@
-module Day5
-  ( solution
-  ) where
+module Day5 where
 
 import           Data.Array
 import           Data.List
