@@ -17,8 +17,8 @@ data Color
 
 mkColor :: Int -> Color
 mkColor 2 = Transparent
-mkColor 0 = Black
-mkColor 1 = White
+mkColor 1 = Black
+mkColor 0 = White
 
 instance Semigroup Color where
   (<>) Transparent other = other
@@ -27,7 +27,7 @@ instance Semigroup Color where
 instance Show Color where
   show Transparent = " "
   show Black       = "X"
-  show White       = "."
+  show White       = "-"
 
 readRow :: [Int] -> Int -> ([Int], [Int])
 readRow pixels w = foldl (\(result, h:t) i -> (result ++ [h], t)) ([], pixels) [1 .. w]
