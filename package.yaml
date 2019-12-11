@@ -25,6 +25,7 @@ dependencies:
   - array
   - containers
   - text
+  - vector
 
 library:
   source-dirs: src

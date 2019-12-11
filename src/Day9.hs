@@ -6,9 +6,13 @@ import qualified Data.Map        as Map
 import           Data.Monoid
 import           Debug.Trace
 
-type Memory = Map.Map Integer Integer
+type Address = Integer
 
-readMem :: Memory -> Integer -> Integer
+type Value = Integer
+
+type Memory = Map.Map Address Value
+
+readMem :: Memory -> Address -> Value
 readMem prg pos =
   case Map.lookup pos prg of
     Just v  -> v
@@ -60,13 +64,8 @@ mkInstruction n =
     (mkMode ((n `div` 10000) `mod` 10))
 
 data OpCode
-  = Add
+  = Add Value Value
   | Multiply
-
-data InsWitParams = InsWitParams
-  { opcode    :: OpCode
-  , numParams :: Int
-  }
 
 readCode :: [Integer] -> Memory
 readCode l =
