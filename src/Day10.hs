@@ -64,19 +64,19 @@ shadowedByRows x obstructingRows row =
         (zip obstructingRows [1 ..])
 
 seesUp :: Int -> Int -> AMap -> [Coordinates]
-seesUp x y m = seesThrough x y (reverse (take y m))
+seesUp x y m = seesThrough x y (-1) (reverse (take y m))
 
 seesDown :: Int -> Int -> AMap -> [Coordinates]
-seesDown x y m = seesThrough x y (drop (y + 1) m)
+seesDown x y m = seesThrough x y 1 (drop (y + 1) m)
 
-seesThrough :: Int -> Int -> [Row] -> [Coordinates]
-seesThrough x y rows =
+seesThrough :: Int -> Int -> Int -> [Row] -> [Coordinates]
+seesThrough x y dy rows =
   let (_, total) =
         foldl
           (\(obstructingRows, found) examinedRow ->
              let shadowedRow = shadowedByRows x obstructingRows examinedRow
                  xPositions = map snd (filter fst (zip shadowedRow [0 ..]))
-                 positions = map (\x -> (x, y)) xPositions
+                 positions = map (\x -> (x, y + dy + dy * (length obstructingRows))) xPositions
               in (obstructingRows ++ [examinedRow], found ++ positions))
           ([], [])
           rows
@@ -104,12 +104,17 @@ asteroids m = [(x, y) | x <- [0 .. (length (head m) - 1)], y <- [0 .. (length m)
 mostVisible :: AMap -> (Coordinates, Int, [Coordinates])
 mostVisible m =
   head $
-  sortBy (\(_, _, c1) (_, _, c2) -> compare (length c1) (length c2)) $
+  sortBy (\(_, _, c1) (_, _, c2) -> compare (length c2) (length c1)) $
   map
     (\(x, y) ->
        let visible = sees x y m
         in ((x, y), length visible, visible))
     (asteroids m)
+
+shootingOrder :: AMap -> [Coordinates]
+shootingOrder m =
+  let ((x, y), _, asteroids) = mostVisible m
+   in sortBy (\(x1, y1) (x2, y2) -> compare (angle (x1 - x) (y1 - y)) (angle (x2 - x) (y2 - y))) asteroids
 
 mapFromLines :: String -> AMap
 mapFromLines contents = map (map (== '#')) (lines contents)
@@ -155,13 +160,41 @@ example3 =
             \#.#.#.#####.####.###\n\
             \###.##.####.##.#..##"
 
-a = [[True, True, True], [False, True, False], [True, True, True]]
+example0 =
+  "###\n\
+            \.#.\n\
+            \###"
+
+m0 = mapFromLines example0
+
+sign :: Integer -> Integer
+sign 0 = 0
+sign x =
+  if x > 0
+    then 1
+    else -1
+
+angle :: Int -> Int -> Double
+angle idx idy =
+  case (sign dx, sign dy) of
+    (0, -1)  -> 0
+    (1, -1)  -> (atan . fromRational) (-dy % dx)
+    (1, 0)   -> pi / 2
+    (1, 1)   -> (atan . fromRational) (dy % dx) + pi / 2
+    (0, 1)   -> pi
+    (-1, -1) -> (atan . fromRational) (dy % dx) + pi
+    (-1, 0)  -> pi * 3 / 4
+    (-1, 1)  -> (atan . fromRational) (-dy % dx) + pi * 3 / 4
+  where
+    dx = fromIntegral idx
+    dy = fromIntegral idy
 
 solution :: IO ()
 solution = do
   contents <- readFile "input/input-day-10.txt"
-  putStrLn $ "answer example1: " ++ show (mostVisible (mapFromLines example1))
-  putStrLn $ "answer example2: " ++ show (mostVisible (mapFromLines example2))
-  putStrLn $ "answer example3: " ++ show (mostVisible (mapFromLines example3))
+--  putStrLn $ "answer example1: " ++ show (mostVisible (mapFromLines example1))
+--  putStrLn $ "answer example2: " ++ show (mostVisible (mapFromLines example2))
+--  putStrLn $ "answer example3: " ++ show (mostVisible (mapFromLines example3))
   putStrLn $ "answer day1 " ++ show (mostVisible (mapFromLines contents))
-  putStrLn contents
+  putStrLn $ "answer day2 " ++ show (drop 199 (shootingOrder (mapFromLines contents)))
+--  putStrLn contents
