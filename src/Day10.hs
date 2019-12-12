@@ -12,6 +12,8 @@ type Row = [Bool]
 
 type AMap = [Row]
 
+type Coordinates = (Int, Int)
+
 at :: Int -> Int -> AMap -> Bool
 at x y m = (m !! y) !! x
 
@@ -61,37 +63,53 @@ shadowedByRows x obstructingRows row =
         row
         (zip obstructingRows [1 ..])
 
-seesUp :: Int -> Int -> AMap -> Int
-seesUp x y m = seesThrough x (reverse (take y m))
+seesUp :: Int -> Int -> AMap -> [Coordinates]
+seesUp x y m = seesThrough x y (reverse (take y m))
 
-seesDown :: Int -> Int -> AMap -> Int
-seesDown x y m = seesThrough x (drop (y + 1) m)
+seesDown :: Int -> Int -> AMap -> [Coordinates]
+seesDown x y m = seesThrough x y (drop (y + 1) m)
 
-seesThrough :: Int -> [Row] -> Int
-seesThrough x rows =
+seesThrough :: Int -> Int -> [Row] -> [Coordinates]
+seesThrough x y rows =
   let (_, total) =
         foldl
-          (\(obstructingRows, count) examinedRow ->
+          (\(obstructingRows, found) examinedRow ->
              let shadowedRow = shadowedByRows x obstructingRows examinedRow
-              in (obstructingRows ++ [examinedRow], count + (length (filter id shadowedRow))))
-          ([], 0)
+                 xPositions = map snd (filter fst (zip shadowedRow [0 ..]))
+                 positions = map (\x -> (x, y)) xPositions
+              in (obstructingRows ++ [examinedRow], found ++ positions))
+          ([], [])
           rows
    in total
 
-seesOnRow :: Int -> Int -> AMap -> Int
+seesOnRow :: Int -> Int -> AMap -> [Coordinates]
 seesOnRow x y m =
-  let hasAsteroids r = (fromEnum . (> 0) . length . filter id) r
-      row = head (drop y m)
-   in hasAsteroids (take x row) + hasAsteroids (drop (x + 1) row)
+  let indexed = zip (head (drop y m)) [0 ..]
+      onLeft =
+        case filter fst (reverse (take x indexed)) of
+          h:t -> [(snd h, y)]
+          _   -> []
+      onRight =
+        case filter fst (drop (x + 1) indexed) of
+          h:t -> [(snd h, y)]
+          _   -> []
+   in onLeft ++ onRight
 
-sees :: Int -> Int -> AMap -> Int
-sees x y m = (seesOnRow x y m) + (seesUp x y m) + (seesDown x y m)
+sees :: Int -> Int -> AMap -> [Coordinates]
+sees x y m = (seesOnRow x y m) ++ (seesUp x y m) ++ (seesDown x y m)
 
 asteroids :: AMap -> [(Int, Int)]
 asteroids m = [(x, y) | x <- [0 .. (length (head m) - 1)], y <- [0 .. (length m) - 1], at x y m]
 
-mostVisible :: AMap -> [(Int, Int, Int)]
-mostVisible m = sortBy (\(_, _, c1) (_, _, c2) -> compare c1 c2) $ map (\(x, y) -> (x, y, sees x y m)) (asteroids m)
+mostVisible :: AMap -> (Coordinates, Int, [Coordinates])
+mostVisible m =
+  head $
+  sortBy (\(_, _, c1) (_, _, c2) -> compare (length c1) (length c2)) $
+  map
+    (\(x, y) ->
+       let visible = sees x y m
+        in ((x, y), length visible, visible))
+    (asteroids m)
 
 mapFromLines :: String -> AMap
 mapFromLines contents = map (map (== '#')) (lines contents)
