@@ -45,6 +45,9 @@ data Program = Program
   , status  :: Status
   , base    :: Integer
   }
+  
+newProgram :: Memory -> Program
+newProgram memory = Program [] [] memory 0 Running 0
 
 instance Show Program where
   show (Program input output program pointer status base) =
@@ -89,7 +92,7 @@ executeOp program@(Program i out prg ptr fi base) =
     2 -> nextEnv (update3 (val1 * val2)) (ptr + 4)
     3 ->
       case i of
-        []  -> program
+        []  -> program { status = Waiting}
         h:t -> Program t out (update1 h) (ptr + 2) Running base
     4 -> Program i (out ++ [val1]) prg (ptr + 2) Running base
     5 ->
