@@ -4,13 +4,12 @@
 module Day12 where
 
 import           Data.List
-import           Data.List        (transpose)
+import           Data.List       (transpose)
 import           Data.List.Split
-import qualified Data.Map         as Map
-import           Data.Map.Strict  (Map, empty, insert, member, (!))
-import qualified Data.Set         as Set
+import qualified Data.Map        as Map
+import           Data.Map.Strict (Map, empty, insert, member, (!))
+import qualified Data.Set        as Set
 import           Debug.Trace
-import           System.IO.Unsafe
 
 data Pt =
   Pt Int
@@ -60,7 +59,7 @@ steps :: Int -> [Moon] -> [Moon]
 steps n ms = foldl (\ms _ -> step ms) ms [1 .. n]
 
 sumC :: Pt -> Integer
-sumC (Pt x y z) = toInteger (abs(x) + abs(y) + abs(z))
+sumC (Pt x y z) = toInteger (abs (x) + abs (y) + abs (z))
 
 energy :: [Moon] -> Integer
 energy ms = sum $ map (\m -> (sumC (position m)) * (sumC (velocity m))) ms
@@ -72,9 +71,20 @@ parseMoonPositions str =
         (\[x, y, z] -> Pt x y z) . (map (read :: String -> Int)) . (splitOn ",") . (filter (flip elem "0123456789,-"))
    in map ((\pos -> Moon pos point0 point0) . parseLine) (lines str)
 
+repeatUntil :: [Moon] -> (Moon -> Int) -> Integer
+repeatUntil moons cond =
+  let initialValue = map cond moons
+      positions = zip (iterate step moons) (iterate (+ 1) 0)
+      repeated = dropWhile (\(ms, ix) -> (map cond ms) /= initialValue || ix == 0) positions
+   in snd (head repeated)
+
 solution :: IO ()
 solution = do
   input <- readFile "input/input-day-12.txt"
   let moons = parseMoonPositions input
   putStrLn $ "answer1: " ++ show (energy (steps 1000 moons))
---  putStrLn $ show (step moons)
+  putStrLn $
+    let tx = (repeatUntil moons (\(Moon (Pt x _ _) _ _) -> x))
+        ty = (repeatUntil moons (\(Moon (Pt _ y _) _ _) -> y))
+        tz = (repeatUntil moons (\(Moon (Pt _ _ z) _ _) -> z))
+     in "answer2: " ++ show (lcm (lcm (tx + 1) (ty + 1)) (tz + 1))
