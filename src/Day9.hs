@@ -45,7 +45,7 @@ data Program = Program
   , status  :: Status
   , base    :: Integer
   }
-  
+
 newProgram :: Memory -> Program
 newProgram memory = Program [] [] memory 0 Running 0
 
@@ -67,7 +67,8 @@ mkInstruction n =
     (mkMode ((n `div` 10000) `mod` 10))
 
 data OpCode
-  = Add Value Value
+  = Add Value
+        Value
   | Multiply
 
 readCode :: [Integer] -> Memory
@@ -92,7 +93,7 @@ executeOp program@(Program i out prg ptr fi base) =
     2 -> nextEnv (update3 (val1 * val2)) (ptr + 4)
     3 ->
       case i of
-        []  -> program { status = Waiting}
+        []  -> program {status = Waiting}
         h:t -> Program t out (update1 h) (ptr + 2) Running base
     4 -> Program i (out ++ [val1]) prg (ptr + 2) Running base
     5 ->
@@ -142,6 +143,14 @@ execute e =
         Finished -> next
         Waiting  -> next
         Running  -> execute next
+
+executeUntil :: (Program -> Bool) -> Program -> Program
+executeUntil cond e =
+  let opcode = (readMem (program e) (pointer e))
+      next = (executeOp e)
+   in case cond next of
+        True  -> next
+        False -> execute next
 
 --      n = trace ("executed " ++ show opcode ++ " -> " ++ show next) next
 solution :: IO ()
